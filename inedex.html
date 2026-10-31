@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Viewer Tabs with Zoom & Download</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f4f7f6;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden; /* ফুল পেজ ফিট রাখার জন্য */
+            display: flex;
+            flex-direction: column;
+        }
+
+        .pdf-tab-container {
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background: #ffffff;
+        }
+
+        /* ১. ডানে-বামে স্ক্রলযোগ্য ট্যাব বার */
+        .tab-header {
+            display: flex;
+            overflow-x: auto;
+            white-space: nowrap;
+            background-color: #ffffff;
+            border-bottom: 2px solid #eaeaea;
+            scrollbar-width: thin;
+            flex-shrink: 0;
+        }
+
+        .tab-header::-webkit-scrollbar {
+            height: 5px;
+        }
+        .tab-header::-webkit-scrollbar-thumb {
+            background: #cccccc;
+            border-radius: 4px;
+        }
+
+        .tab-btn {
+            padding: 12px 20px;
+            border: none;
+            background: transparent;
+            font-size: 14px;
+            font-weight: 600;
+            color: #555;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            outline: none;
+            flex-shrink: 0;
+            border-bottom: 3px solid transparent;
+        }
+
+        .tab-btn:hover {
+            color: #007bff;
+            background-color: #f8f9fa;
+        }
+
+        .tab-btn.active {
+            color: #007bff;
+            border-bottom: 3px solid #007bff;
+            background-color: #eef6ff;
+        }
+
+        /* ২. টুলবার (জুম ও ডাউনলোড বাটন) */
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 15px;
+            background-color: #2c3e50;
+            color: #ffffff;
+            flex-shrink: 0;
+        }
+
+        .toolbar-title {
+            font-size: 14px;
+            font-weight: 600;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .toolbar-controls {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .btn-tool {
+            background: #34495e;
+            color: #fff;
+            border: 1px solid #455a64;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: background 0.2s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .btn-tool:hover {
+            background: #007bff;
+            border-color: #007bff;
+        }
+
+        .btn-download {
+            background: #27ae60;
+            border-color: #27ae60;
+        }
+        .btn-download:hover {
+            background: #219150;
+            border-color: #219150;
+        }
+
+        /* ৩. পিডিএফ কন্টেইনার (ফুল স্ক্রিন উইডথ) */
+        .tab-content {
+            flex-grow: 1;
+            width: 100%;
+            height: 100%;
+            background: #525659;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .pdf-viewport {
+            width: 100%;
+            height: 100%;
+            transition: transform 0.2s ease-in-out;
+            transform-origin: top center;
+        }
+
+        .pdf-iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="pdf-tab-container">
+    <!-- ১. স্ক্রলযোগ্য ট্যাব বার (১ থেকে ২০ পর্যন্ত) -->
+    <div class="tab-header" id="tabHeader">
+        <button class="tab-btn active" onclick="switchPdf(this, 'https://github.com/MSHS24K/PDF/releases/download/pdf/1.pdf', 'পিডিএফ ১')">📄 পিডিএফ ১</button>
+        <button class="tab-btn" onclick="switchPdf(this, 'https://github.com/MSHS24K/PDF/releases/download/pdf/2.pdf', 'পিডিএফ ২')">📄 পিডিএফ ২</button>
+        <button class="tab-btn" onclick="switchPdf(this, 'https://github.com/MSHS24K/PDF/releases/download/pdf/3.pdf', 'পিডিএফ ৩')">📄 পিডিএফ ৩</button>
+        <button class="tab-btn" onclick="switchPdf(this, 'https://github.com/MSHS24K/PDF/releases/download/pdf/4.pdf', 'পিডিএফ ৪')">📄 পিডিএফ ৪</button>
+        <button class="tab-btn" onclick="switchPdf(this, 'https://github.com/MSHS24K/PDF/releases/download/pdf/5.pdf', 'পিডিএফ ৫')">📄 পিডিএফ ৫</button>
+        <button class="tab-btn" onclick="switchPdf(this, 'https://github.com/MSHS24K/PDF/releases/download/pdf/6.pdf', 'পিডিএফ ৬')">📄 পিডিএফ ৬</button>
+        <button class="tab-btn" onclick="switchPdf(this, 'https://github.com/MSHS24K/PDF/releases/download/pdf/7.pdf', 'পিডিএফ ৭')">📄 পিডিএফ ৭</button>
+        <button class="tab-btn" onclick="switchPdf(this, 'https://github.com/MSHS24K/PDF/releases/download/pdf/8.pdf', 'পিডিএফ ৮')">📄 পিডিএফ ৮</button>
+        <button class="tab-btn" onclick="switchPdf(this, 'https://github.com/MSHS24K/PDF/releases/download/pdf/9.pdf', 'পিডিএফ ৯')">📄 পিডিএফ ৯</button>
+        <button class="tab-btn" onclick="switchPdf(this, 'https://github.com/MSHS24K/PDF/releases/download/pdf/10.pdf', 'পিডিএফ ১০')">📄 পিডিএফ ১০</button>
+        <button class="tab-btn" onclick="switchPdf(this, 'https://github.com/MSHS24K/PDF/releases/download/pdf/11.pdf', 'পিডিএফ ১১')">📄 পিডিএফ ১১</button>
+        <button class="tab-btn" onclick="switchPdf(this, 'https://github.com/MSHS24K/PDF/releases/download/pdf/12.pdf', 'পিডিএফ ১২')">📄 পিডিএফ ১২</button>
+        <button class="tab-btn" onclick="switchPdf(this, 'https://github.com/MSHS24K/PDF/releases/download/pdf/13.pdf', 'পিডিএফ ১৩')">📄 পিডিএফ ১৩</button>
+        <button class="tab-btn" onclick="switchPdf(this, 'https://github.com/MSHS24K/PDF/releases/download/pdf/14.pdf', 'পিডিএফ ১৪')">📄 পিডিএফ ১৪</button>
+        <button class="tab-btn" onclick="switchPdf(this, 'https://github.com/MSHS24K/PDF/releases/download/pdf/15.pdf', 'পিডিএফ ১৫')">📄 পিডিএফ ১৫</button>
+        <button class="tab-btn" onclick="switchPdf(this, 'https://github.com/MSHS24K/PDF/releases/download/pdf/16.pdf', 'পিডিএফ ১৬')">📄 পিডিএফ ১৬</button>
+        <button class="tab-btn" onclick="switchPdf(this, 'https://github.com/MSHS24K/PDF/releases/download/pdf/17.pdf', 'পিডিএফ ১৭')">📄 পিডিএফ ১৭</button>
+        <button class="tab-btn" onclick="switchPdf(this, 'https://github.com/MSHS24K/PDF/releases/download/pdf/18.pdf', 'পিডিএফ ১৮')">📄 পিডিএফ ১৮</button>
+        <button class="tab-btn" onclick="switchPdf(this, 'https://github.com/MSHS24K/PDF/releases/download/pdf/19.pdf', 'পিডিএফ ১৯')">📄 পিডিএফ ১৯</button>
+        <button class="tab-btn" onclick="switchPdf(this, 'https://github.com/MSHS24K/PDF/releases/download/pdf/20.pdf', 'পিডিএফ ২০')">📄 পিডিএফ ২০</button>
+    </div>
+
+    <!-- ২. কন্ট্রোল টুলবার -->
+    <div class="toolbar">
+        <span class="toolbar-title" id="currentTitle">📄 পিডিএফ ১</span>
+        <div class="toolbar-controls">
+            <button class="btn-tool" onclick="zoomIn()">🔍+ জুম ইন</button>
+            <button class="btn-tool" onclick="zoomOut()">🔍- জুম আউট</button>
+            <button class="btn-tool" onclick="resetZoom()">↺ রিসেট</button>
+            <a id="downloadBtn" href="#" target="_blank" download class="btn-tool btn-download">⬇ ডাউনলোড</a>
+        </div>
+    </div>
+
+    <!-- ৩. ফুল পেজ আইফ্রেম সেকশন -->
+    <div class="tab-content">
+        <div class="pdf-viewport" id="pdfViewport">
+            <iframe id="mainIframe" class="pdf-iframe" src=""></iframe>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentZoom = 1;
+    let currentRawUrl = "";
+
+    // পেজ লোড হবার পর ১ম ফাইল দেখাবে
+    window.addEventListener('DOMContentLoaded', () => {
+        const firstBtn = document.querySelector('.tab-btn');
+        if (firstBtn) {
+            firstBtn.click();
+        }
+    });
+
+    // ট্যাবে ক্লিক করলে ডাইনামিকালি নতুন ফাইল লোড করার ফাংশন
+    function switchPdf(btn, pdfUrl, title) {
+        // Active ক্লাস আপডেট
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        // টাইটেল ও ডাউনলোড লিংক আপডেট
+        document.getElementById('currentTitle').innerText = title;
+        currentRawUrl = pdfUrl;
+        document.getElementById('downloadBtn').href = pdfUrl;
+
+        // জুম লেভেল রিসেট
+        resetZoom();
+
+        // আইফ্রেমে ফাইল লোড করা (Google Docs Viewer দিয়ে)
+        const viewerUrl = `https://docs.google.com/gview?url=${encodeURIComponent(pdfUrl)}&embedded=true`;
+        document.getElementById('mainIframe').src = viewerUrl;
+    }
+
+    // জুম ইন ফাংশন
+    function zoomIn() {
+        if (currentZoom < 2.0) {
+            currentZoom += 0.15;
+            applyZoom();
+        }
+    }
+
+    // জুম আউট ফাংশন
+    function zoomOut() {
+        if (currentZoom > 0.6) {
+            currentZoom -= 0.15;
+            applyZoom();
+        }
+    }
+
+    // জুম রিসেট ফাংশন
+    function resetZoom() {
+        currentZoom = 1;
+        applyZoom();
+    }
+
+    // জুম অ্যাপ্লাই করা
+    function applyZoom() {
+        document.getElementById('pdfViewport').style.transform = `scale(${currentZoom})`;
+    }
+
+    // মাউস হুইল দিয়ে ট্যাব বার স্ক্রল করার জন্য (Desktop Experience Boost)
+    const tabHeader = document.getElementById('tabHeader');
+    tabHeader.addEventListener('wheel', (evt) => {
+        evt.preventDefault();
+        tabHeader.scrollLeft += evt.deltaY;
+    });
+</script>
+
+</body>
+</html>
